@@ -1,0 +1,29 @@
+# Reproducible, version-pinned execution image for the Hermetic sandbox.
+#
+# Honors the drift concern raised in review: the base layer is pinned by tag
+# here and re-pinned by SHA256 digest at build time (see sandbox.ensure_image,
+# which resolves and records the digest). pytest + the JSON reporter are baked
+# in so the *runtime* container needs no network at all (`--network none`).
+#
+# Build once (network needed once, at build time); run air-gapped forever after.
+
+FROM python:3.11-slim
+
+# Pin the test toolchain. These are the only third-party packages the sandbox
+# ever executes, and they never change between runs.
+RUN pip install --no-cache-dir \
+        pytest==8.3.4 \
+        pytest-json-report==1.5.0 \
+    && rm -rf /root/.cache
+
+# The harness that runs untrusted code. Baked in (immutable), never mounted.
+COPY sandbox_runner.py /opt/hermetic/runner.py
+
+# /workspace is where the untrusted solution + tests land; it is mounted as a
+# size-capped tmpfs at run time and owned by an unprivileged user.
+RUN useradd --create-home --uid 10001 sandbox || true
+WORKDIR /workspace
+
+# Documentation only — the real enforcement (network none, mem, pids, ro rootfs,
+# user) is applied by the Docker SDK at container-create time in sandbox.py.
+USER sandbox
