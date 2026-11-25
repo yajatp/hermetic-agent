@@ -152,13 +152,17 @@ def run_preflight() -> int:
         "syntax error": "def merge_intervals(x)\n    return x\n",
     }
     print("# AST pre-flight sanitizer\n")
+    all_expected = True
     for label, code in samples.items():
         result = security.sanitize(code)
+        expected_ok = label == "clean solution"
+        if result.ok != expected_ok:
+            all_expected = False
         status = "PASS ✅" if result.ok else "BLOCK ⛔"
         print(f"- {label}: {status}")
         for v in result.violations:
             print(f"    - {v}")
-    return 0
+    return 0 if all_expected else 1
 
 
 def cli() -> int:

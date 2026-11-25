@@ -1,5 +1,5 @@
 # Hermetic Agent — runtime dependencies
-# Pinned for reproducibility (Jason Tran's V2 feedback: avoid drift).
+# Direct dependencies are pinned to reduce drift.
 
 langgraph==0.2.60
 google-genai==0.8.0
